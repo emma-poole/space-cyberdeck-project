@@ -6,3 +6,4 @@
 
 ## 22/06/2025
 - Set up GitHub repo structure
+- Add & start BOM

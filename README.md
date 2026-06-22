@@ -12,4 +12,4 @@ A portable Linux computer built around a Raspberry Pi 5, designed and built from
 - **Future Phases**: *TBC*
 
 ## 📝 Build Log
-[`notes/build-log.md`](notes/build-log.md)
+[`journal/build-log.md`](journal/build-log.md)
