@@ -12,7 +12,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 ### 1.1 Order Parts
 - [x] Raspberry Pi 5 (8GB) — **purchased** (Scorptec bundle w/ official power supply)
 - [x] Active cooler for Pi 5 — **purchased**
-- [ ] microSD card, 128GB, A2 rated (~$20 AUD) — Jaycar/Officeworks/Amazon AU (Sandisk or Samsung)
+- [x] microSD card, 64GB, A1 rated — **owned**
 - [ ] Display — size/type TBD (see decision note below)
 - [ ] USB-C PD power bank — **must explicitly list 5V/5A (25W) output**, not just high mAh (~$40-60 AUD) — look for "100W PD power bank" listings and check the spec sheet for the 5V/5A profile before buying; standard phone power banks (5V/2-3A) will undervolt the Pi 5 under load
 - [ ] Mechanical keyboard (60% USB) or salvaged keyboard, wired (~$0-40 AUD) — Jaycar/Facebook Marketplace/JB Hi-Fi
@@ -26,8 +26,8 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Panel-mount 3.5mm audio extension cable (~$3-5 AUD) — AliExpress
 - [ ] USB-A to microSD card reader, low-profile (~$8-10 AUD) — AliExpress/Jaycar
 - [ ] (Optional) RJ45 panel-mount extension cable (~$5-10 AUD) — Pi 5 has onboard Gigabit Ethernet; this routes it to case exterior
-- [ ] ToF sensor (confirm model, e.g. VL53L1X or VL53L5CX) — already owned
-
+- [x] ToF sensor (VL53L4CX) — **owned**
+      
 **Screen size decision (do this before ordering display):**
 - [ ] Decide: more laptop-like (7-10", easier to read/code, less portable) vs. more compact/handheld (5-7", easier to carry, smaller text)
 - [ ] Once size is chosen, confirm it's HDMI input (simplest, universal) rather than DSI-only
