@@ -8,8 +8,8 @@ A portable Linux computer built around a Raspberry Pi 5, designed and built from
 - Develop a CV-based star tracker for attitude determination
 
 ## 🔨 Development Phases
-- **Phase 1** — core build (in progress)
-- **Future Phases** — TBD
+- **Phase 1**: the core build (in progress)
+- **Future Phases**: *TBC*
 
 ## 📝 Build Log
 [`notes/build-log.md`](notes/build-log.md)
