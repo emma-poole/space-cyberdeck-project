@@ -1,4 +1,4 @@
-# Space Cyberdeck 🛰️
+# Space Cyberdeck 🛰️☄️🌌
 
 A portable Linux computer built around a Raspberry Pi 5, designed and built from scratch. The project builds on my current electrical engineering and design skillset, with a focus on intersecting with space-industry skills.
 
