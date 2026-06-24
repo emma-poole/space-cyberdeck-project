@@ -12,7 +12,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 ### 1.1 Order Parts
 - [x] Raspberry Pi 5 (8GB) — **purchased** (Scorptec bundle w/ official power supply)
 - [x] Active cooler for Pi 5 — **purchased**
-- [x] microSD card, 64GB, A1 rated — **owned**
+- [x] microSD card, 64GB, A1 rated — **owned** (optional upgrade later: SanDisk Extreme 128GB A2 for better performance, or Pi M.2 HAT+ + NVMe SSD for a bigger jump — decide before finalising case design as HAT+ adds height under the board)
 - [ ] Display — size/type TBD (see decision note below)
 - [ ] USB-C PD power bank — **must explicitly list 5V/5A (25W) output**, not just high mAh (~$40-60 AUD) — look for "100W PD power bank" listings and check the spec sheet for the 5V/5A profile before buying; standard phone power banks (5V/2-3A) will undervolt the Pi 5 under load
 - [ ] Mechanical keyboard (60% USB) or salvaged keyboard, wired (~$0-40 AUD) — Jaycar/Facebook Marketplace/JB Hi-Fi
@@ -27,47 +27,53 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] USB-A to microSD card reader, low-profile (~$8-10 AUD) — AliExpress/Jaycar
 - [ ] (Optional) RJ45 panel-mount extension cable (~$5-10 AUD) — Pi 5 has onboard Gigabit Ethernet; this routes it to case exterior
 - [x] ToF sensor (VL53L4CX) — **owned**
-      
+
 **Screen size decision (do this before ordering display):**
 - [ ] Decide: more laptop-like (7-10", easier to read/code, less portable) vs. more compact/handheld (5-7", easier to carry, smaller text)
 - [ ] Once size is chosen, confirm it's HDMI input (simplest, universal) rather than DSI-only
 - [ ] Order display once size/interface confirmed
 
-### 1.2 Initial Software Setup
-- [ ] Download Raspberry Pi Imager on your laptop (raspberrypi.com/software)
-- [ ] Flash Raspberry Pi OS (64-bit, Desktop version) onto the microSD card
-  - In Imager: click "Edit Settings" before flashing — set hostname, enable SSH, set username/password, configure wifi (saves doing this on first boot)
-- [ ] Insert microSD into Pi 5, connect display, keyboard, power
-- [ ] Boot the Pi — confirm it reaches the desktop
-- [ ] Connect to wifi (if not pre-configured)
-- [ ] Open terminal, run:
+### 1.2 Initial Hardware Setup
+- [x] Mount active cooler onto bare Pi board before anything else
+
+### 1.3 Initial Software Setup
+- [x] Download Raspberry Pi Imager on your laptop (raspberrypi.com/software)
+- [x] Flash Raspberry Pi OS (64-bit, Desktop version) onto the microSD card
+  - In Imager: click "Edit Settings" before flashing — set hostname (`aphelion`), enable SSH, set username (`emma`), set password, configure wifi (saves doing this on first boot)
+- [x] Insert microSD into Pi 5, connect display, keyboard, power
+- [x] Boot the Pi — confirm it reaches the desktop
+- [x] Connect to wifi (if not pre-configured)
+- [x] Open terminal, run:
   ```
   sudo apt update && sudo apt full-upgrade -y
   sudo reboot
   ```
+- [x] Switch SSH authentication from password to public key
+- [x] Link Raspberry Pi to GitHub via SSH
+- [x] Link Raspberry Pi to my local laptop & vice versa for easy file transfer/access
 
-### 1.3 Install Core Software
-- [ ] Install VS Code:
+### 1.4 Install Core Software
+- [x] Install VS Code:
   ```
   sudo apt install code -y
   ```
   (if not found, follow official VS Code ARM64 .deb install instructions)
-- [ ] Confirm Chromium is installed (usually pre-installed): `chromium-browser --version`
-- [ ] Install Git:
+- [x] Confirm Chromium is installed (usually pre-installed): `chromium-browser --version`
+- [x] Install Git:
   ```
   sudo apt install git -y
   ```
-- [ ] Configure Git identity:
+- [x] Configure Git identity:
   ```
   git config --global user.name "Your Name"
   git config --global user.email "your@email.com"
   ```
-- [ ] (Optional) Install LibreOffice:
+- [x] (Optional) Install LibreOffice:
   ```
   sudo apt install libreoffice -y
   ```
 
-### 1.4 Test the Build
+### 1.5 Test the Build
 - [ ] Open VS Code, create a test file, confirm editing works smoothly
 - [ ] Open Chromium, browse a few sites, confirm performance is acceptable
 - [ ] Test touchscreen responsiveness (if using touchscreen)
@@ -75,8 +81,10 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Test trackpad — registers correctly, no conflicts
 - [ ] Pair Bluetooth mouse: Pi desktop → Bluetooth icon → scan → select mouse → confirm pairing; test click/movement
 - [ ] Check battery runtime with power bank (note down approx hours)
+- [ ] Decide on whether to upgrade the storage device or not to A2 SD card or NVME hat
 
-### 1.5 Case (Initial)
+### 1.6 Case (Initial)
+- [ ] Finalise all components before starting the case design
 - [ ] Sketch rough layout on paper: top-down view showing screen position, keyboard position, trackpad position, Pi location, battery location, USB hub location, cable routing paths
 - [ ] Measure physical dimensions of each component (screen, Pi board incl. cooler height, keyboard, trackpad, battery pack, USB hub) — note width/length/height in mm for each
 - [ ] Decide enclosure approach: 3D printed (design in Fusion360/Tinkercad/FreeCAD), laser-cut panels, or repurposed enclosure (e.g. old hardware case/toolbox)
@@ -115,8 +123,8 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   - [ ] All ports you need access to (USB for SDR/camera later, power) are reachable from outside the case
   - [ ] Power on fully assembled unit — confirm nothing is loose, screen still works, keyboard/trackpad still work, Bluetooth mouse still pairs
 
-### 1.6 Gesture Detection & Power Management (ToF Sensor)
-- [ ] Confirm ToF sensor model (e.g. VL53L1X/VL53L5CX) and connect via I2C to Pi
+### 1.7 Gesture Detection & Power Management (ToF Sensor)
+- [ ] Connect ToF sensor via I2C to Pi
 - [ ] Enable I2C on Pi:
   ```
   sudo raspi-config
@@ -141,7 +149,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Document power draw comparison: Pi always-on vs MCU-watching + Pi suspended
 - [ ] Note in build-log: this is a real spacecraft power-budget pattern — low-power "housekeeping" controller manages when higher-power systems wake up
 
-### 1.7 Physical Buttons, LEDs & External Ports
+### 1.8 Physical Buttons, LEDs & External Ports
 - [ ] Plan button/LED/port layout on case exterior (e.g. side panel): mark positions for power button, gesture toggle button, reset button, status LEDs, USB port, audio jack, SD card reader, ethernet port
 - [ ] Drill/cut holes in case for each panel-mount item, test-fit before final mounting
 
@@ -191,12 +199,13 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] With case assembled, test every button, LED, and port in one pass
 - [ ] Update build-log.md with GPIO pin assignments for all buttons/LEDs (reference for later)
 
-### 1.8 Documentation Setup (Private + Public)
+### 1.9 Documentation Setup (Private + Public)
 - [x] Create a GitHub repository (e.g. "space-cyberdeck")
 - [x] Write README.md with project goal (1 paragraph) — this is the first thing anyone (including LinkedIn visitors) will see, so keep it clear and welcoming
 - [x] Create a `build-log.md` file — your private/detailed working notes, commit here after each session (what you did, what broke, how you fixed it)
 - [x] Create a `/docs` or `/portfolio` folder for public-facing summaries — shorter, polished write-ups per phase (what it does, why it's interesting, a photo/demo) suitable for linking from LinkedIn
 - [x] Create a `/photos` folder for build photos as you go
+- [x] Add & start BOM Excel sheet
 - [ ] Add a short "Project Overview" section to README covering: what the deck does, what skills it demonstrates, and links to each phase's portfolio write-up (you'll fill these in as you complete each phase)
 
 ---
