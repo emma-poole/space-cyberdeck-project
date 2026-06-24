@@ -7,8 +7,11 @@
 ## 22/06/2025
 - Set up GitHub repo structure (most of 1.9 from project guide)
 - Add & start BOM
+
+## 24/06/2025
 - Complete the initial hardware setup (1.2 from project guide)
   - Install the active cooler on the Pi 5
   - Set up Pi 5 with spare keyboard, mouse, display & ethernet to test the set up works
 - Complete the initial software setup (1.3 from project guide)
 - Complete installing the core software (1.4 from project guide)
+- Test the software parts of the build & the Bluetooth module (a bit of 1.5 from project guide)

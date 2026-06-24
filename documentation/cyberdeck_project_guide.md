@@ -50,7 +50,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   ```
 - [x] Switch SSH authentication from password to public key
 - [x] Link Raspberry Pi to GitHub via SSH
-- [x] Link Raspberry Pi to my local laptop & vice versa for easy file transfer/access
+- [x] Link my local laptop to the Raspberry Pi via SSH for easy file transfer/access
 
 ### 1.4 Install Core Software
 - [x] Install VS Code:
@@ -74,8 +74,9 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   ```
 
 ### 1.5 Test the Build
-- [ ] Open VS Code, create a test file, confirm editing works smoothly
-- [ ] Open Chromium, browse a few sites, confirm performance is acceptable
+- [x] Open VS Code, test by editing .md repo files, confirm editing works smoothly
+- [x] Open Chromium and Firefox, browse a few sites, confirm performance is acceptable --> I am gonna make Firefox my default as it seems to work better
+- [x] Initial test with my laptop's Bluetoot mouse to see if the Bluetooth module works
 - [ ] Test touchscreen responsiveness (if using touchscreen)
 - [ ] Test keyboard — all keys register correctly
 - [ ] Test trackpad — registers correctly, no conflicts
