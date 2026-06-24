@@ -1,5 +1,7 @@
 # Space-Themed Cyberdeck Project Guide
 > **Note:** This guide was generated with AI assistance and is intended as a starting point for learning purposes. Steps will be updated and verified as the build progresses.
+>
+> **Build order note:** This guide is structured **case-last**. All parts are ordered, and all firmware/software is built and bench-tested first (Pi, SDR ground station, CV star tracker, and the antenna rotator), using a temporary bench setup. The case is designed and built only once every component for Phases 1-4 is in hand and working, so the case is sized and laid out around the *final, fully-known* part list instead of being redesigned partway through. See the new **Phase 5: Case Build** for the case steps (these were previously sections 1.9/1.10).
 
 A full step-by-step build guide: SBC prototype → daily-use deck → satellite ground station → CV star tracker → (optional) custom SoM carrier + antenna rotator.
 
@@ -7,9 +9,19 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 
 ---
 
+## Ongoing Throughout Project
+- [ ] Commit to build-log.md after every session (even short notes)
+- [ ] Take photos at each stage for documentation
+- [ ] Keep a running "issues encountered" list with solutions — this is valuable for write-ups and interviews later
+- [ ] As new parts arrive each phase, store them in your parts container (anti-static bags for bare boards/PCBs) rather than leaving them loose on the desk
+- [ ] After each phase's portfolio summary is written, consider a short LinkedIn post linking to it — builds a visible trail of progress over time, not just one big reveal at the end
+
+---
+
 ## PHASE 1: Core Cyberdeck Build (SBC)
 
 ### 1.1 Order Parts
+- [ ] Buy a storage container big enough to hold all project parts (Pi + accessories, screen, keyboard, power bank, small electronics, SDR + antenna, camera, and eventually STM32 + motors) until the case is built — look for something roughly A4-A3 footprint and 15-20cm deep (e.g. a stackable tote with a clip lid), ideally with a separate small compartment tray/tackle-box inside for screws/buttons/LEDs, and keep bare boards (Pi, STM32, SDR, camera) in anti-static bags within it
 - [x] Raspberry Pi 5 (8GB) — **purchased** (Scorptec bundle w/ official power supply)
 - [x] Active cooler for Pi 5 — **purchased**
 - [x] microSD card, 64GB, A1 rated — **owned** (optional upgrade later: SanDisk Extreme 128GB A2 for better performance, or Pi M.2 HAT+ + NVMe SSD for a bigger jump — decide before finalising case design as HAT+ adds height under the board)
@@ -33,10 +45,19 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Once size is chosen, confirm it's HDMI input (simplest, universal) rather than DSI-only
 - [ ] Order display once size/interface confirmed
 
-### 1.2 Initial Hardware Setup
+### 1.2 Documentation Setup
+- [x] Create a GitHub repository (e.g. "space-cyberdeck")
+- [x] Write README.md with project goal (1 paragraph) — this is the first thing anyone (including LinkedIn visitors) will see, so keep it clear and welcoming
+- [x] Create a `build-log.md` file — your detailed working notes, commit here after each session
+- [x] Create a `/docs` or `/portfolio` folder for public-facing summaries — shorter, polished write-ups per phase (what it does, why it's interesting, a photo/demo) suitable for linking from LinkedIn
+- [x] Create a `/photos` folder for build photos as you go
+- [x] Add & start BOM Excel sheet
+- [ ] Add a short "Project Overview" section to README covering: what the deck does, what skills it demonstrates, and links to each phase's portfolio write-up (you'll fill these in as you complete each phase)
+
+### 1.3 Initial Hardware Setup
 - [x] Mount active cooler onto bare Pi board before anything else
 
-### 1.3 Initial Software Setup
+### 1.4 Initial Software Setup
 - [x] Download Raspberry Pi Imager on your laptop (raspberrypi.com/software)
 - [x] Flash Raspberry Pi OS (64-bit, Desktop version) onto the microSD card
   - In Imager: click "Edit Settings" before flashing — set hostname (`aphelion`), enable SSH, set username (`emma`), set password, configure wifi (saves doing this on first boot)
@@ -52,7 +73,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [x] Link Raspberry Pi to GitHub via SSH
 - [x] Link my local laptop to the Raspberry Pi via SSH for easy file transfer/access
 
-### 1.4 Install Core Software
+### 1.5 Install Core Software
 - [x] Install VS Code:
   ```
   sudo apt install code -y
@@ -73,56 +94,16 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   sudo apt install libreoffice -y
   ```
 
-### 1.5 Test the Build
+### 1.6 Test the Build
 - [x] Open VS Code, test by editing .md repo files, confirm editing works smoothly
 - [x] Open Chromium and Firefox, browse a few sites, confirm performance is acceptable --> I am gonna make Firefox my default as it seems to work better
-- [x] Initial test with my laptop's Bluetoot mouse to see if the Bluetooth module works
+- [x] Initial test with my laptop's Bluetooth mouse to see if the Bluetooth module works
 - [ ] Test touchscreen responsiveness (if using touchscreen)
 - [ ] Test keyboard — all keys register correctly
 - [ ] Test trackpad — registers correctly, no conflicts
 - [ ] Pair Bluetooth mouse: Pi desktop → Bluetooth icon → scan → select mouse → confirm pairing; test click/movement
 - [ ] Check battery runtime with power bank (note down approx hours)
 - [ ] Decide on whether to upgrade the storage device or not to A2 SD card or NVME hat
-
-### 1.6 Case (Initial)
-- [ ] Finalise all components before starting the case design
-- [ ] Sketch rough layout on paper: top-down view showing screen position, keyboard position, trackpad position, Pi location, battery location, USB hub location, cable routing paths
-- [ ] Measure physical dimensions of each component (screen, Pi board incl. cooler height, keyboard, trackpad, battery pack, USB hub) — note width/length/height in mm for each
-- [ ] Decide enclosure approach: 3D printed (design in Fusion360/Tinkercad/FreeCAD), laser-cut panels, or repurposed enclosure (e.g. old hardware case/toolbox)
-- [ ] If 3D printing: design/find a base plate with mounting holes matching Pi 5's hole pattern (49mm x 58mm spacing) and screen's mounting holes
-- [ ] Print or cut a test/prototype version first (doesn't need to be final material — cardboard mockup is fine for layout check)
-- [ ] Mount the Pi 5:
-  - [ ] Attach standoffs/spacers at Pi's mounting holes (keeps board off the base, allows airflow under cooler)
-  - [ ] Screw Pi board onto standoffs
-  - [ ] Confirm active cooler isn't obstructed and has airflow clearance
-- [ ] Mount the display:
-  - [ ] Position screen at a usable viewing angle (consider a slight tilt/stand if not flat)
-  - [ ] Secure using screen's own mounting holes/brackets, or adhesive/velcro if no holes
-  - [ ] Route display cable (HDMI) from screen to Pi — leave enough slack for the case to close/open if hinged
-- [ ] Mount the keyboard:
-  - [ ] Position below or beside screen depending on layout
-  - [ ] Secure with screws (if keyboard PCB has mounting holes) or velcro/adhesive standoffs
-  - [ ] Route keyboard USB cable to USB hub, avoiding tight bends
-- [ ] Mount the trackpad:
-  - [ ] Position below/beside keyboard within comfortable thumb/finger reach
-  - [ ] Secure with adhesive or printed bracket
-  - [ ] Route trackpad USB cable to USB hub
-- [ ] Mount the USB hub:
-  - [ ] Position somewhere accessible internally (not necessarily exterior-facing)
-  - [ ] Connect hub's upstream cable to one of Pi 5's USB ports
-  - [ ] Connect keyboard, trackpad, and leave remaining hub ports free for SDR/card reader/future peripherals
-- [ ] Bluetooth mouse needs no mounting — just keep it nearby/clipped to the case exterior if you want it always at hand (e.g. small velcro strap)
-- [ ] Mount the battery/power bank:
-  - [ ] Place in a location with weight balance in mind (avoid top-heavy/unstable result)
-  - [ ] Secure with a strap, velcro, or printed bracket (must not shift when device is moved)
-  - [ ] Route USB-C power cable to Pi's power input
-- [ ] Cable management pass:
-  - [ ] Bundle/tie loose cables away from moving parts or vents
-  - [ ] Confirm no cables block the cooler's airflow or screen hinge movement
-- [ ] Final fit check:
-  - [ ] Close/assemble case fully — confirm it closes without forcing or pinching cables
-  - [ ] All ports you need access to (USB for SDR/camera later, power) are reachable from outside the case
-  - [ ] Power on fully assembled unit — confirm nothing is loose, screen still works, keyboard/trackpad still work, Bluetooth mouse still pairs
 
 ### 1.7 Gesture Detection & Power Management (ToF Sensor)
 - [ ] Connect ToF sensor via I2C to Pi
@@ -150,68 +131,37 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Document power draw comparison: Pi always-on vs MCU-watching + Pi suspended
 - [ ] Note in build-log: this is a real spacecraft power-budget pattern — low-power "housekeeping" controller manages when higher-power systems wake up
 
-### 1.8 Physical Buttons, LEDs & External Ports
-- [ ] Plan button/LED/port layout on case exterior (e.g. side panel): mark positions for power button, gesture toggle button, reset button, status LEDs, USB port, audio jack, SD card reader, ethernet port
-- [ ] Drill/cut holes in case for each panel-mount item, test-fit before final mounting
-
-**Power button (safe shutdown + boot)**
-- [ ] Wire a momentary push button to Pi 5's power button header (GPIO pins labelled for power, check Pi 5 documentation for exact pins — typically a 2-pin header near USB-C)
-- [ ] Test: single press while off → boots Pi; press while on → triggers safe shutdown (default Pi 5 behavior, no extra software needed for basic on/off)
-- [ ] Mount button on case exterior, label clearly (e.g. "PWR")
+### 1.8 Button & LED Software (Bench Testing)
+Test all button and LED logic on the bench with jumper wires — using your storage container/bench box setup, not the final case. Debugging a loose GPIO connection inside a sealed enclosure is miserable, so all of this stays bench-only until Phase 5.
 
 **Gesture detection toggle button**
 - [ ] Wire a second momentary push button to a free Pi GPIO pin (e.g. GPIO17) with a pull-up resistor (or use Pi's internal pull-up in software)
-- [ ] In your gesture detection script (from 1.6), add logic:
+- [ ] In your gesture detection script (from 1.7), add logic:
   - [ ] On startup, set a flag `gesture_enabled = True`
   - [ ] Poll the button GPIO; on each press (debounced), toggle `gesture_enabled`
   - [ ] Only run gesture logic when `gesture_enabled` is True
 - [ ] Wire a status LED (with appropriate resistor, e.g. 330Ω) to another GPIO pin
   - [ ] LED on = gesture detection active, LED off = disabled
   - [ ] Update LED state in script whenever toggle changes
-- [ ] Mount button + LED on case exterior near where gestures are made, label (e.g. "GESTURE")
 - [ ] Test: press button, confirm LED toggles and gesture actions stop/start accordingly
+
+**Power button (safe shutdown + boot)**
+- [ ] Wire a momentary push button to Pi 5's power button header (GPIO pins labelled for power, check Pi 5 documentation for exact pins — typically a 2-pin header near USB-C)
+- [ ] Test: single press while off → boots Pi; press while on → triggers safe shutdown (default Pi 5 behavior, no extra software needed for basic on/off)
 
 **Reset/reboot button (optional but useful)**
 - [ ] Wire a third momentary button to another GPIO pin
 - [ ] Write a small background script that triggers `sudo reboot` when held 2+ seconds (avoids accidental reboots)
-- [ ] Mount on case, label (e.g. "RESET"), consider recessing slightly
+- [ ] Test: confirm hold triggers reboot, short press does nothing
 
-**USB port (accessible)**
-- [ ] Connect panel-mount USB-A extension to one of the USB hub's ports
-- [ ] Mount external USB-A socket on case exterior
-- [ ] Test: plug in USB drive, confirm Pi detects it (`lsusb`, `df -h`)
-
-**Audio port (accessible)**
-- [ ] Connect panel-mount 3.5mm extension to Pi 5's audio output (via USB-audio adapter if needed — confirm Pi 5 audio output method)
-- [ ] Mount external 3.5mm socket on case exterior
-- [ ] Test: play audio file, confirm output through headphones
-
-**SD card slot (swappable temp storage)**
-- [ ] Connect USB-A to microSD card reader to the USB hub
-- [ ] Mount card reader slot accessible from case exterior
-- [ ] Test: insert spare microSD, confirm it mounts (`lsblk`)
-- [ ] Set up script/shortcut to copy data to this card (e.g. SDR recordings, star tracker images)
-
-**Ethernet port (accessible)**
-- [ ] Route Pi 5's onboard ethernet to case exterior via RJ45 panel-mount extension, or cutout for direct access
-- [ ] Test: connect cable, confirm connection (`ip a`)
-
-**Final I/O check**
-- [ ] With case assembled, test every button, LED, and port in one pass
-- [ ] Update build-log.md with GPIO pin assignments for all buttons/LEDs (reference for later)
-
-### 1.9 Documentation Setup (Private + Public)
-- [x] Create a GitHub repository (e.g. "space-cyberdeck")
-- [x] Write README.md with project goal (1 paragraph) — this is the first thing anyone (including LinkedIn visitors) will see, so keep it clear and welcoming
-- [x] Create a `build-log.md` file — your private/detailed working notes, commit here after each session (what you did, what broke, how you fixed it)
-- [x] Create a `/docs` or `/portfolio` folder for public-facing summaries — shorter, polished write-ups per phase (what it does, why it's interesting, a photo/demo) suitable for linking from LinkedIn
-- [x] Create a `/photos` folder for build photos as you go
-- [x] Add & start BOM Excel sheet
-- [ ] Add a short "Project Overview" section to README covering: what the deck does, what skills it demonstrates, and links to each phase's portfolio write-up (you'll fill these in as you complete each phase)
+**Record GPIO pin assignments**
+- [ ] Update build-log.md with the GPIO pin used for every button and LED — you'll reference this constantly during case assembly in Phase 5
 
 ---
 
 ## PHASE 2: Satellite Tracking & SDR Ground Station
+
+*Still bench-based — SDR and antenna are tested loose, not mounted in anything yet. Store the dongle/antenna in your parts container between sessions.*
 
 ### 2.1 Order Parts
 - [ ] RTL-SDR dongle with bundled antenna (~$35-45 AUD)
@@ -304,10 +254,13 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   - [ ] Compare decoded image quality (less noise/static lines = improvement)
   - [ ] Note signal strength readings in SDR++ with/without preamp
 - [ ] Document results in build-log.md — this is a genuine RF PCB design + test deliverable for your portfolio
+- [ ] Store the assembled preamp board in an anti-static bag in your parts container until case design (Phase 5) — bare PCBs are easily damaged loose
 
 ---
 
 ## PHASE 3: CV Star Tracker
+
+*Still bench-based — camera is handheld/tripod-mounted for testing, not mounted in the case yet.*
 
 ### 3.1 Order Parts
 - [ ] Raspberry Pi Camera Module (wide FOV preferred) (~$25-35 AUD)
@@ -391,6 +344,8 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 
 ## PHASE 4 (Optional/Stretch): Antenna Rotator
 
+*Still bench-based — mount, motors, and firmware are all built and tested loose/on a temporary stand, not inside the case.*
+
 ### 4.1 Order Parts
 - [ ] STM32 Nucleo board (reuse from ENGG3800 if available)
 - [ ] 2x servo motors or stepper motors (az/el control) (~$20-40 AUD)
@@ -448,7 +403,7 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Write a public portfolio summary (`/docs/phase4-antenna-rotator.md`): explain the FreeRTOS task structure with a simple diagram, include a short video of the antenna tracking a live pass — videos are highly effective on LinkedIn
 
 ### 4.7 (Stretch) Gesture-Triggered Antenna Pop-Up
-*A small, contained motor project — antenna sits stowed flat when not in use, gesture (from your Phase 1 ToF sensor) deploys it upright.*
+*A small, contained motor project — antenna sits stowed flat when not in use, gesture (from your Phase 1 ToF sensor) deploys it upright. Note: because this mechanism deploys through the case wall itself, its hinge cutout needs to be planned as part of Phase 5's case design, not bolted on afterward.*
 - [ ] Design simple deploy mechanism: a single hinge point with a small servo or DC motor providing the lift force (much lighter/simpler than a full rotator — just one motion, stowed to upright)
 - [ ] Add a limit switch or basic position sensing at the "deployed" end-stop, so the motor knows when to stop (avoids over-driving and stalling the motor)
 - [ ] Wire motor + limit switch to STM32 (can reuse Phase 4.3's STM32 setup, or run on a separate small MCU if you want it independent of the rotator)
@@ -459,16 +414,125 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 
 ---
 
-## PHASE 5 (Future/Optional): SBC → SoM Custom Carrier
+## PHASE 5: Case Build
 
-*Only attempt once Phases 1-4 are stable and you know exactly what I/O you need.*
+*Moved here deliberately — by this point every component from Phases 1-4 has been bought and bench-tested, so the case is designed once around the complete, final part list instead of being reworked as new phases add hardware. (Previously sections 1.9/1.10 in early drafts of this guide.)*
 
-### 5.1 Requirements Gathering
+### 5.1 Final Parts & Layout Audit
+- [ ] Empty your storage container and lay out every component that needs to fit in or on the case: Pi 5 + cooler, screen, keyboard, trackpad, USB hub, power bank, buttons/LEDs, ToF sensor, RTL-SDR + antenna, (optional) preamp board, camera module + mount, (optional) STM32 + motors + az/el mount
+- [ ] Note which items must be exterior-accessible (screen, keyboard, trackpad, ports, buttons, camera — needs sky view, antenna — needs to protrude or have a feed-through) vs. which can live fully internal (Pi, USB hub, STM32, preamp board)
+- [ ] Decide whether the antenna rotator (Phase 4) is a separate standalone unit cabled to the deck, or physically integrated into the case — this materially changes the case footprint, so confirm before sketching layout
+- [ ] Re-confirm physical dimensions of every component now that you physically have them (don't rely on spec-sheet numbers — measure)
+
+### 5.2 Design
+- [ ] Sketch rough layout on paper: top-down view showing screen position, keyboard position, trackpad position, Pi location, battery location, USB hub location, SDR/camera/STM32 placement, cable routing paths
+- [ ] Decide enclosure approach: 3D printed (design in Fusion360/Tinkercad/FreeCAD), laser-cut panels, or repurposed enclosure (e.g. old hardware case/toolbox)
+- [ ] If 3D printing: design/find a base plate with mounting holes matching Pi 5's hole pattern (49mm x 58mm spacing) and screen's mounting holes
+- [ ] Print or cut a test/prototype version first (doesn't need to be final material — cardboard mockup is fine for layout check)
+
+### 5.3 Mount Core Components
+- [ ] Mount the Pi 5:
+  - [ ] Attach standoffs/spacers at Pi's mounting holes (keeps board off the base, allows airflow under cooler)
+  - [ ] Screw Pi board onto standoffs
+  - [ ] Confirm active cooler isn't obstructed and has airflow clearance
+- [ ] Mount the display:
+  - [ ] Position screen at a usable viewing angle (consider a slight tilt/stand if not flat)
+  - [ ] Secure using screen's own mounting holes/brackets, or adhesive/velcro if no holes
+  - [ ] Route display cable (HDMI) from screen to Pi — leave enough slack for the case to close/open if hinged
+- [ ] Mount the keyboard:
+  - [ ] Position below or beside screen depending on layout
+  - [ ] Secure with screws (if keyboard PCB has mounting holes) or velcro/adhesive standoffs
+  - [ ] Route keyboard USB cable to USB hub, avoiding tight bends
+- [ ] Mount the trackpad:
+  - [ ] Position below/beside keyboard within comfortable thumb/finger reach
+  - [ ] Secure with adhesive or printed bracket
+  - [ ] Route trackpad USB cable to USB hub
+- [ ] Mount the USB hub:
+  - [ ] Position somewhere accessible internally (not necessarily exterior-facing)
+  - [ ] Connect hub's upstream cable to one of Pi 5's USB ports
+  - [ ] Connect keyboard, trackpad, and leave remaining hub ports free for SDR/card reader/future peripherals
+- [ ] Bluetooth mouse needs no mounting — just keep it nearby/clipped to the case exterior if you want it always at hand (e.g. small velcro strap)
+- [ ] Mount the battery/power bank:
+  - [ ] Place in a location with weight balance in mind (avoid top-heavy/unstable result)
+  - [ ] Secure with a strap, velcro, or printed bracket (must not shift when device is moved)
+  - [ ] Route USB-C power cable to Pi's power input
+
+### 5.4 Mount Phase 2-4 Components
+- [ ] Mount RTL-SDR dongle internally, route antenna cable to an exterior feed-through or SMA panel connector
+- [ ] If built, mount the 137MHz preamp board (2.9) internally near the antenna feed-through, in a way that keeps RF cable runs short
+- [ ] Mount the camera module at an exterior-facing point with a clear view of the sky (e.g. on a lid edge or hinged flap) — confirm it isn't obstructed when the case is closed
+- [ ] If integrating the antenna rotator (Phase 4) into the case rather than running it standalone: mount the STM32 internally, route UART to Pi, and either cut a mounting point for the az/el assembly or plan its external cable feed-through
+- [ ] If building the gesture-triggered pop-up antenna (4.7): cut the hinge opening for the deploy mechanism into the case wall during this design pass, not afterward
+
+### 5.5 Cable Management & Final Fit
+- [ ] Cable management pass:
+  - [ ] Bundle/tie loose cables away from moving parts or vents
+  - [ ] Confirm no cables block the cooler's airflow or screen hinge movement
+- [ ] Final fit check:
+  - [ ] Close/assemble case fully — confirm it closes without forcing or pinching cables
+  - [ ] All ports you need access to (USB, power, antenna feed-through) are reachable from outside the case
+  - [ ] Power on fully assembled unit — confirm nothing is loose, screen still works, keyboard/trackpad still work, Bluetooth mouse still pairs, SDR/camera still function
+
+### 5.6 Panel Mounting & External Ports
+Plan the exterior layout, then drill/cut and mount everything. The scripts are already tested from Phase 1.7/1.8 — this section is purely physical installation.
+
+- [ ] Plan button/LED/port layout on case exterior (e.g. side panel): mark positions for power button, gesture toggle button, reset button, status LEDs, USB port, audio jack, SD card reader, ethernet port, antenna feed-through, camera mount point
+- [ ] Drill/cut holes in case for each panel-mount item, test-fit before final mounting
+
+**Power button**
+- [ ] Mount button on case exterior, label clearly (e.g. "PWR")
+- [ ] Run wiring from button to Pi 5's power button header (referencing GPIO pin notes from 1.8)
+- [ ] Test: press confirms safe shutdown and boot
+
+**Gesture detection toggle button + LED**
+- [ ] Mount button + LED on case exterior near where gestures are made, label (e.g. "GESTURE")
+- [ ] Run wiring to the GPIO pins noted in 1.8
+- [ ] Test: confirm LED toggles and gesture actions stop/start correctly
+
+**Reset/reboot button (optional)**
+- [ ] Mount on case, label (e.g. "RESET"), consider recessing slightly to avoid accidental presses
+- [ ] Run wiring to GPIO pin noted in 1.8
+
+**USB port (accessible)**
+- [ ] Connect panel-mount USB-A extension to one of the USB hub's ports
+- [ ] Mount external USB-A socket on case exterior
+- [ ] Test: plug in USB drive, confirm Pi detects it (`lsusb`, `df -h`)
+
+**Audio port (accessible)**
+- [ ] Connect panel-mount 3.5mm extension to Pi 5's audio output (via USB-audio adapter if needed — confirm Pi 5 audio output method)
+- [ ] Mount external 3.5mm socket on case exterior
+- [ ] Test: play audio file, confirm output through headphones
+
+**SD card slot (swappable temp storage)**
+- [ ] Connect USB-A to microSD card reader to the USB hub
+- [ ] Mount card reader slot accessible from case exterior
+- [ ] Test: insert spare microSD, confirm it mounts (`lsblk`)
+- [ ] Set up script/shortcut to copy data to this card (e.g. SDR recordings, star tracker images)
+
+**Ethernet port (accessible)**
+- [ ] Route Pi 5's onboard ethernet to case exterior via RJ45 panel-mount extension, or cutout for direct access
+- [ ] Test: connect cable, confirm connection (`ip a`)
+
+**Final I/O check**
+- [ ] With case fully assembled, test every button, LED, and port in one pass
+- [ ] Confirm build-log.md GPIO pin assignments are up to date
+
+### 5.7 Document Phase 5
+- [ ] Update build-log.md with final case design files/photos, fit issues encountered, and fixes
+- [ ] Write a public portfolio summary (`/docs/phase5-case-build.md`): photos of the finished deck, brief note on the case-last approach and why it avoided rework
+
+---
+
+## PHASE 6 (Future/Optional): SBC → SoM Custom Carrier
+
+*Only attempt once Phases 1-5 are stable and you know exactly what I/O you need.*
+
+### 6.1 Requirements Gathering
 - [ ] List every peripheral currently connected to the Pi (display, SDR, camera, UART to STM32, power)
 - [ ] Note connector types and pin counts needed for each
 - [ ] Decide on SoM: Raspberry Pi CM5 (recommended — same software as Pi 5)
 
-### 5.2 Carrier Board Design
+### 6.2 Carrier Board Design
 - [ ] Research CM5 carrier board reference designs (Raspberry Pi publishes schematics)
 - [ ] Use PCB design software (e.g. KiCad) to design carrier board with:
   - CM5 connector
@@ -478,29 +542,23 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
   - Power input + regulation circuitry
 - [ ] Get design reviewed (university resources, online PCB design communities)
 
-### 5.3 Fabrication & Assembly
+### 6.3 Fabrication & Assembly
 - [ ] Order PCB from fabricator (e.g. JLCPCB, PCBWay)
 - [ ] Source components (CM5 module, connectors, passives)
 - [ ] Assemble board (solder components — consider uni's lab facilities)
 
-### 5.4 Bring-Up
+### 6.4 Bring-Up
 - [ ] Power on carrier board with CM5, confirm boot
 - [ ] Test each peripheral connection one at a time (display, SDR, camera, STM32 UART)
 - [ ] Debug any issues (check connections, power rails, signal integrity)
 
-### 5.5 Final Integration
+### 6.5 Final Integration
 - [ ] Transfer all software/configs from Pi 5 setup to CM5
 - [ ] Rebuild final case around new carrier board
-- [ ] Full system test: all phases (1-4) working on new hardware
+- [ ] Full system test: all phases (1-5) working on new hardware
 
-### 5.6 Document Phase 5
+### 6.6 Document Phase 6
 - [ ] Publish PCB design files, bring-up notes, final build photos to GitHub repo
-- [ ] Write a public portfolio summary (`/docs/phase5-custom-carrier.md`) and final project summary/reflection — this becomes the centerpiece of your portfolio, tie together what each phase taught you and how it relates to space industry skills
+- [ ] Write a public portfolio summary (`/docs/phase6-custom-carrier.md`) and final project summary/reflection — this becomes the centerpiece of your portfolio, tie together what each phase taught you and how it relates to space industry skills
 
 ---
-
-## Ongoing Throughout Project
-- [ ] Commit to build-log.md after every session (even short notes)
-- [ ] Take photos at each stage for documentation
-- [ ] Keep a running "issues encountered" list with solutions — this is valuable for write-ups and interviews later
-- [ ] After each phase's portfolio summary is written, consider a short LinkedIn post linking to it — builds a visible trail of progress over time, not just one big reveal at the end
