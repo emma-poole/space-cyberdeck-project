@@ -18,6 +18,174 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 
 ---
 
+## SYSTEM DESIGN REFERENCE
+*A standing reference for the full system architecture — Pi, STM32, and power management PCB — covering what connects where, why, and what protects it. This is the answer to "where does X go and why" at any point in the build; the phase sections below are the step-by-step execution. Update this section if any wiring/component decision changes mid-build.*
+
+### Power source note
+Primary power: **5V/5A USB-C PD power bank, multiple output ports.** Since the bank already outputs regulated 5V, no main buck/step-down converter is needed — the open question is **current budget**, not voltage conversion. Pi 5 alone can draw up to ~5A momentarily under full load; two MG996R + one SG90 servos can add several more amps under simultaneous stall. With multiple ports available, **dedicate a separate port to the servo rail** rather than sharing the Pi's port — confirm each port's individual current rating (not just the bank's total) before finalizing.
+
+### STM32
+
+**Hardware**
+
+| Component | Purpose |
+|---|---|
+| VL53L4CX ToF sensor | Detects hand gestures (distance/motion) |
+| I2C pull-up resistors on SDA/SCL | Required for I2C bus to function. **3.6kΩ, no series resistor** for fast mode (400kHz, ≤90pF load) or **1.5kΩ + 100Ω series resistor** for fast mode plus (1MHz, ≤90pF load) — confirm actual values against your PCB trace capacitance |
+| XSHUT pull-up resistor (10kΩ) | XSHUT must always be driven to avoid leakage current |
+| XSHUT → STM32 GPIO | Hardware standby control; also needed for future multi-sensor address reassignment |
+| GPIO1 (interrupt) → STM32 GPIO + 10kΩ pull-up | Avoids pure polling — sensor signals when a result is ready (ST recommends this over polling) |
+| Decoupling caps on AVDD, placed close to AVDDVCSEL/AVSSVCSEL pins | Datasheet-specified placement detail — matters for PCB layout in Phase 6 |
+| ~~2.8V LDO regulator~~ — likely unnecessary | AVDD/IOVDD ranges both cover 3.3V; check breakout board schematic first before adding |
+| TVS/ESD array on I2C lines | Extra margin beyond the sensor's own ±2kV HBM rating |
+| Servo 1, 2, 3 PWM output pins | Physical pins driving azimuth, elevation, and pop-up servos |
+| ~~Flyback diode per servo~~ — **not needed** | Standard analog hobby servos (MG996R, SG90) have internal H-bridge driver circuitry; the motor coil isn't directly exposed to the GPIO pin |
+| TVS diode on 5V servo power rail | Clamps general transient/switching noise on the shared servo rail |
+| Unidirectional logic level shifter (3.3V→5V), e.g. 74AHCT125 | A bidirectional I2C-style shifter (e.g. BSS138) relies on pull-ups and weak drive strength, which struggles with PWM signal integrity over servo cable length — use a proper unidirectional buffer |
+| JST-SM 3-pin connector ×3 | Standard hobby servo connector |
+| GPIO wire → Pi RUN pin | Physical line used to wake the Pi |
+| GPIO wire → Pi shutdown signal pin | Physical line used to warn Pi of imminent shutdown |
+| GPIO input from TPS3840 | Carries the "power failing" signal into the STM32 |
+| STM32 status LED | Visual indicator, blink pattern set by firmware |
+| 32.768kHz crystal | Drives the onboard RTC oscillator |
+| RTC supercap (0.1-1F) + diode | Keeps RTC ticking through power loss |
+| BOOT0 pull-down resistor | Holds STM32 in normal run mode on boot |
+| SWD debug header (SWDIO, SWDCLK, GND, VCC) | Connector for flashing/debugging firmware |
+| Fuse on main power input | Limits current if something shorts downstream |
+| Test points on power rails (3.3V, 5V, servo rail) | Probe access without back-probing connectors |
+| 100nF ceramic on every VDD pin | High-frequency noise filtering |
+| 10µF bulk cap near power input | Smooths larger supply fluctuations |
+| 1µF + 10nF on VDDA | Separate decoupling for analog supply |
+
+**Firmware**
+
+| Task | Purpose |
+|---|---|
+| I2C driver + gesture detection logic | Talks to ToF sensor at address 0x52 |
+| Interrupt handler on GPIO1 | Reads ranging result on data-ready signal instead of polling |
+| XSHUT control routine | Hardware standby / address reassignment |
+| I2C bus-reset/recovery routine | If the I2C bus hangs (a device holds SDA low, e.g. after a power glitch), reconfigure I2C pins as GPIO, toggle SCL 9 times to free the stuck device, then reinitialize the I2C peripheral |
+| Servo PWM generation (x3) | Generates duty cycles to command each servo's position |
+| Staggered/soft-start servo movement | Avoid commanding all three servos to move simultaneously at full speed — reduces peak current draw, easing pressure on polyfuse sizing |
+| UART driver (TX/RX to Pi) | Sends gesture events/status, receives az/el motor commands |
+| Wake controller logic | Decides what counts as a wake gesture, pulls Pi RUN pin |
+| Power supervisor task | Watches TPS3840 GPIO input, triggers shutdown signal to Pi |
+| LED blink pattern logic | Sets idle vs active blink rate on status LED |
+| RTC peripheral configuration | Sets up and reads time from the crystal-driven RTC |
+| Watchdog timer | Auto-resets STM32 if firmware hangs |
+| Motor control loop | Converts target az/el into PWM duty cycles |
+| Heartbeat/status task | Periodically sends position + RTC time to Pi |
+| I2C address reassignment routine (stretch) | Multi-sensor support via XSHUT |
+
+### Pi 5
+
+**Hardware**
+
+| Component | Purpose |
+|---|---|
+| Power button → J2 header (panel-mount, parallel with onboard) | External on/off access without opening the case; parallel wiring means either button works independently |
+| Gesture toggle button | Physical GPIO input |
+| Reset/reboot button (hold 2+ sec, recessed) | Physical GPIO input |
+| Spare button | Unassigned GPIO input |
+| Power indicator LED | Physical LED |
+| Gesture enabled LED | Physical LED |
+| UART connection to STM32 | Crossed TX/RX wiring + common ground |
+| Keyboard, trackpad, RTL-SDR dongle | USB peripherals via 4-port powered hub (Cruxtec AU3-H4-SG) |
+| Panel-mount external USB-A port | Routes one hub port to case exterior for occasional USB devices |
+| Pi Camera Module 3 (wide angle) — star tracker | CSI port 1 — faces sky for Phase 3 star tracker |
+| Pi Camera Module 3 (wide angle) — webcam | CSI port 2 — faces forward, mounted at top of screen bezel like a laptop webcam |
+
+| Main display | HDMI-connected screen |
+| Audio output (3.5mm — kept free for headphones) | Headphone/headset jack, not used for internal speaker |
+| Internal mono speaker (3W 4Ω) + PAM8403 amp | Good quality built-in speaker behind case grille; driven from Pi audio output via PAM8403 amp board |
+| INMP441 I2S MEMS microphone | Connects to Pi GPIO via I2S interface (not USB); built-in mic for voice commands, audio recording, off-grid comms; frees a USB port vs USB mic |
+| INA219 power monitor (I2C to Pi) | Reads actual battery voltage/current from power bank rail — without this there is no way to measure real battery % from a USB-C power bank |
+| WS2812B addressable RGB LED strip | Ambient/decorative lighting; driven by STM32 (timer+DMA) due to strict bit-timing requirements |
+| Ethernet (RJ45 panel-mount, optional) | Wired networking option |
+| Official Pi 5 Active Cooler (heatsink + PWM fan) | Running RTL-SDR + OpenCV star tracker + Skyfield simultaneously is a heavy sustained CPU load; cheap insurance against throttling regardless of whether it's strictly necessary for your specific workload |
+
+**Software**
+
+| Task | Purpose |
+|---|---|
+| Gesture toggle handling | Debounces button press, flips gesture-enabled flag |
+| Reset button handling | Detects 2-second hold, triggers `sudo reboot` |
+| Power LED control | Sets LED based on awake/suspended state |
+| Gesture LED control | Mirrors current gesture toggle state |
+| UART communication handler | Sends az/el commands, receives gesture events + heartbeat |
+| Star tracker CV pipeline | Processes camera images with OpenCV |
+| Satellite pass prediction | Uses Skyfield to calculate upcoming passes |
+| SDR control/recording | Controls SDR++/SatDump |
+| Gesture → action mapping | Maps gesture events to volume/brightness/desktop/antenna actions |
+| NTP time sync | Keeps system clock accurate when online |
+| RTC fallback | Reads STM32's RTC over UART when offline |
+| Auto-suspend timer daemon | Puts Pi to sleep after inactivity |
+| Graceful shutdown script | Safely powers off on STM32's low-voltage signal |
+| Mission control dashboard GUI | Displays satellite countdown, SDR status, battery %, antenna position, star tracker results |
+| Staggered peripheral init on boot | RTL-SDR can cause a momentary USB power surge on init — sequence OpenCV/Skyfield/SDR startup rather than initializing all at once |
+
+### Power Management PCB
+
+**Hardware**
+
+| Component | Purpose |
+|---|---|
+| LTC3225 supercap charger IC | Charges shutdown-buffer supercap, limits charge current |
+| 10-47F supercap (shutdown buffer) | Stores buffered shutdown energy |
+| Boost/UPS converter downstream of supercap, e.g. LTC3110 | Supercaps discharge with a drooping voltage curve, not a flat one — without a boost/UPS IC between the supercap and the Pi, most of the supercap's stored capacity would be wasted before voltage sags out of the Pi's usable range |
+| TPS3840 voltage supervisor IC | Watches input voltage, signals STM32 below threshold |
+| Reverse polarity protection (P-MOSFET/Schottky) | Protects downstream components if power connected backwards |
+| Overvoltage protection | Stops voltage spikes exceeding ratings |
+| Bulk decoupling cap at main input | Smooths first stage of incoming power |
+| TVS diode on main input | Clamps large voltage transients |
+| Fuse on main power input | First line of overcurrent protection |
+
+*No firmware/software runs on this board — purely analog/passive protection circuitry.*
+
+### Shared / cross-board
+
+**Hardware**
+
+| Component | Purpose |
+|---|---|
+| Servo power rail (5V, separate output port from Pi) | Prevents servo current spikes from browning out Pi/STM32 |
+| 470µF electrolytic on servo rail | Absorbs bulk current surge on servo movement |
+| 100nF ceramic in parallel on servo rail | Handles high-frequency noise the bulk cap can't |
+| 100nF ceramic per servo signal line | Filters PWM noise from coupling into STM32 |
+| Polyfuse, 7-8A on servo rail | Two MG996R at ~2.5A stall each plus an SG90 can exceed 5A under simultaneous load — sized up from initial 3-5A spec to avoid nuisance tripping |
+| Common ground between Pi and STM32 | Required for UART/GPIO signaling to work |
+
+### Servo selection (Hardware)
+
+- **Servo 1 + 2 (rotator az/el):** MG996R — metal gear, holds antenna against wind/gravity
+- **Servo 3 (pop-up):** SG90 — lightweight, enough torque to lift the antenna arm
+
+### STM32 FreeRTOS task structure (Firmware — priority detail)
+
+| Task | Priority | Function |
+|---|---|---|
+| UART Receive | High | Receive motor commands from Pi |
+| Gesture/ToF (interrupt-driven via GPIO1) | High | React to ranging-ready interrupt, detect gestures, send to Pi |
+| Power Supervisor | High | Monitor voltage supervisor signal, trigger Pi shutdown |
+| I2C Bus Recovery | High (event-triggered) | Free a hung I2C bus if a device holds SDA low |
+| Motor Control (with staggered movement) | Medium | Drive servos to target az/el position without simultaneous peak draw |
+| Wake Controller | Medium | Monitor for wake gesture, pull Pi RUN pin |
+| Heartbeat/Status | Low | Send position + RTC time to Pi periodically |
+
+### Known Gaps (decisions, not parts — resolve before/during build)
+
+- **Per-port current rating of your power bank** — confirm each individual output port's rated current, not just the bank's total 5A figure
+- **STM32 power budget** — "always-on, ~mA draw" hasn't been measured directly; check against the specific Nucleo board's datasheet
+- **PWM timer allocation** — confirm enough independent timer channels for 3 simultaneous servo PWM outputs
+- **I2C speed decision** — fast mode vs fast mode plus changes pull-up/series resistor values (see STM32 hardware table above)
+- **VL53L4CX breakout schematic check** — confirm what's already handled onboard (regulation, pull-ups, decoupling) before duplicating
+- **Test point placement** — beyond power rails, decide on I2C/UART probe access
+- **Case grounding strategy** — conductive vs non-conductive enclosure affects ESD/grounding approach at panel cutouts
+- **RF/SDR grounding and shielding** — good practice flagged (shield SDR, ground SMA connector to chassis if metal case), but exact needs depend on case material and layout relative to switching regulators
+- **Real-world thermal testing** — confirm whether the Pi 5 actually throttles under the combined SDR + OpenCV + Skyfield workload, even with the active cooler
+
+---
+
 ## PHASE 1: Core Cyberdeck Build (SBC)
 
 ### 1.1 Order Parts
@@ -30,15 +198,51 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Mechanical keyboard (60% USB) or salvaged keyboard, wired (~$0-40 AUD) — Jaycar/Facebook Marketplace/JB Hi-Fi
 - [ ] USB trackpad module (small, panel-mountable, built into case) (~$20-30 AUD) — AliExpress, search "USB trackpad module DIY"
 - [ ] Bluetooth mini mouse (~$15-25 AUD) — for portable/away-from-deck use; pairs to Pi 5's built-in Bluetooth, no USB port used
-- [ ] Powered USB hub, 4+ port (~$15-20 AUD) — keyboard + trackpad + SDR + card reader use the Pi 5's native USB ports; hub gives expansion room for future peripherals (mouse is Bluetooth, so doesn't compete for a USB slot)
+- [ ] Powered USB hub — Cruxtec AU3-H4-SG 4-port USB 3.0 (~$19 AUD, Centrecom/CPL/Scorptec) — keyboard + trackpad + RTL-SDR + panel-mount USB-A are the 4 permanent devices; powered via USB-C port from power bank (not wall adapter); Pi's 4 native ports remain free for direct/occasional use
 - [ ] USB-A to USB-C cable (if power bank doesn't include one) (~$5 AUD)
 - [ ] Momentary push buttons x3-4 (panel-mount, ~$1-2 each) — AliExpress, search "panel mount momentary push button"
 - [ ] Status LEDs x2-3 + 330Ω resistors (~$2 total) — AliExpress, search "5mm LED assorted kit"
 - [ ] Panel-mount USB-A extension (~$5-8 AUD) — AliExpress
 - [ ] Panel-mount 3.5mm audio extension cable (~$3-5 AUD) — AliExpress
-- [ ] USB-A to microSD card reader, low-profile (~$8-10 AUD) — AliExpress/Jaycar
+- ~~USB-A to microSD card reader~~ — **removed**: redundant, Pi boots directly from its own microSD slot; occasional external storage handled via panel-mount USB-A port instead
 - [ ] (Optional) RJ45 panel-mount extension cable (~$5-10 AUD) — Pi 5 has onboard Gigabit Ethernet; this routes it to case exterior
 - [x] ToF sensor (VL53L4CX) — **owned**
+
+**Smaller Parts (order from AliExpress unless noted):**
+- [ ] INMP441 I2S MEMS microphone module (~$3-5 AUD) — connects directly to Pi GPIO via I2S (not USB); built-in mic, no USB port used; search "INMP441 I2S microphone module"
+- [ ] Good quality mono speaker, 3W 4Ω (~$5-10 AUD) — internal speaker, mounts behind case grille cutout (Phase 5); search "3W 4 ohm speaker"
+- [ ] PAM8403 amplifier board (~$2-5 AUD) — drives the 3W speaker from Pi audio output; search "PAM8403 amplifier module"
+- [ ] Addressable RGB LED strip, WS2812B 5V (~$8-15 AUD) — ambient/decorative lighting; search "WS2812B LED strip 5V"
+- [ ] INA219 power monitor breakout (~$3-8 AUD) — connects to Pi I2C; reads actual battery voltage/current from power bank rail; feeds real battery % to dashboard
+- [ ] Potentiometer with built-in push-button, panel-mount (~$3-8 AUD) — rotary knob controls LED brightness (STM32 ADC), push controls LED mode cycling (STM32 GPIO); search "potentiometer switch panel mount"
+- [ ] Passive buzzer (~$1-3 AUD) — PWM-driven from STM32 for audible alerts; search "passive buzzer 5V"
+- [ ] STM32 power mode toggle switch, panel-mount latching (~$1-3 AUD) — Low power vs Off mode for STM32; search "panel mount toggle switch"
+- [ ] MG996R servo x2 (~$8-12 AUD each) — azimuth + elevation for antenna rotator (Phase 4)
+- [ ] SG90 servo x1 (~$3-5 AUD) — antenna pop-up deploy/stow (Phase 4 stretch)
+- [ ] 32.768kHz crystal (~$1-2 AUD) — drives STM32 RTC oscillator for accurate timekeeping
+- [ ] 0.1-1F supercap for RTC backup (~$2-5 AUD) — keeps STM32 RTC running through power loss
+- [ ] 10-47F supercap for shutdown buffer (~$5-15 AUD) — provides 5-10 second power buffer for graceful Pi shutdown
+- [ ] TPS3840 voltage supervisor IC (~$2-5 AUD, Mouser/AliExpress) — watches power bank voltage, signals STM32 when dropping
+- [ ] LTC3225 supercap charger IC (~$5-10 AUD, Mouser/AliExpress) — safely charges shutdown supercap with current limiting
+- [ ] LTC3110 boost/UPS IC (~$5-10 AUD, Mouser/AliExpress) — prevents wasted supercap energy as voltage droops during shutdown
+- [ ] 74AHCT125 logic level shifter (~$1-3 AUD) — 3.3V STM32 → 5V for WS2812B data line and servo signals
+- [ ] 470Ω resistor on WS2812B data line — in resistor kit
+- [ ] 1000µF electrolytic cap for WS2812B power input (~$1 AUD)
+- [ ] 470µF electrolytic cap for servo power rail (~$1 AUD)
+- [ ] 100nF ceramic cap pack of 100 (~$3-5 AUD) — decoupling on every IC
+- [ ] 10µF electrolytic cap pack of 50 (~$3-5 AUD) — bulk decoupling
+- [ ] TVS diode for main power input (~$1-2 AUD)
+- [ ] TVS/ESD array for I2C lines (~$1-3 AUD)
+- [ ] Polyfuse 7-8A for servo power rail (~$2-5 AUD)
+- [ ] P-channel MOSFET for reverse polarity protection (~$1-2 AUD)
+- [ ] JST-SM 3-pin connectors x3 for servos (~$2-3 AUD)
+- [ ] SMA panel-mount connector for antenna feed-through (~$3-5 AUD)
+- [ ] Strain relief cable clamps, assorted pack (~$3-5 AUD)
+- [ ] SWD debug header pins for STM32 (~$1-2 AUD)
+- [ ] Diode assortment pack (~$2-3 AUD)
+- [ ] Resistor kit (~$5-10 AUD if not already owned)
+- [ ] Fuse holder + fuses (~$2-5 AUD)
+- [ ] Status LEDs x7 + 330Ω resistors — need: green (power on), blue (gesture active), amber (charging), red (low battery), white (STM32 heartbeat), purple (satellite pass active), teal (SDR recording)
 
 **Screen size decision (do this before ordering display):**
 - [ ] Decide: more laptop-like (7-10", easier to read/code, less portable) vs. more compact/handheld (5-7", easier to carry, smaller text)
@@ -105,31 +309,42 @@ This guide includes both a private `build-log.md` (your detailed working notes) 
 - [ ] Check battery runtime with power bank (note down approx hours)
 - [ ] Decide on whether to upgrade the storage device or not to A2 SD card or NVME hat
 
-### 1.7 Gesture Detection & Power Management (ToF Sensor)
-- [ ] Connect ToF sensor via I2C to Pi
-- [ ] Enable I2C on Pi:
+### 1.7 Gesture Detection & Power Management (ToF Sensor on STM32)
+*The VL53L4CX connects to the STM32 via I2C — not the Pi. The STM32 handles all gesture detection logic and sends gesture events to the Pi over UART. This is the correct final architecture (not a stretch goal anymore) — it means the STM32 can detect gestures and wake the Pi even when the Pi is fully suspended, which a Pi-connected sensor could never do.*
+
+**STM32 firmware (C + FreeRTOS — done as part of Phase 4 STM32 work):**
+- [ ] Wire VL53L4CX to STM32 I2C pins (SDA, SCL, XSHUT, GPIO1, VDD, GND) — refer to System Design Reference for pull-up/protection values
+- [ ] Write STM32 I2C driver for VL53L4CX at address 0x52
+- [ ] Set up interrupt on GPIO1 pin — sensor signals data-ready instead of polling
+- [ ] Write gesture detection logic: interpret distance changes across zones/over time as swipe left/right, hand near/far
+- [ ] Send gesture event codes to Pi over UART (e.g. `GESTURE:SWIPE_LEFT\n`)
+- [ ] Implement wake controller: on wake gesture → pull Pi RUN pin low → Pi wakes from suspend
+- [ ] Read power mode toggle switch GPIO — Low power mode (ToF polling active) vs Off mode (STM32 deep sleep, no gesture detection)
+- [ ] Test: trigger gestures by hand, confirm UART outputs correct event codes (use serial monitor on laptop)
+
+**Pi software (Python — done here in Phase 1):**
+- [ ] Enable UART on Pi:
   ```
   sudo raspi-config
   ```
-  → Interface Options → I2C → Enable
-- [ ] Install Python I2C libraries (e.g. `pip install vl53l1x` or manufacturer-specific library)
-- [ ] Write test script: read raw distance values, confirm sensor responds to hand movement
-- [ ] Build basic gesture logic: detect swipe (distance changes across zones/over time) and hand near/far
-- [ ] Map gestures to actions (e.g. swipe = switch desktop, hand near = wake screen, hand far + hold = sleep)
-- [ ] Test gestures reliably trigger correct actions
+  → Interface Options → Serial Port → disable login shell, enable serial hardware
+- [ ] Write Python UART listener script: reads gesture event codes from STM32, maps to Pi actions
+- [ ] Map gesture events to actions:
+  - Swipe = switch virtual desktop
+  - Hand near = wake screen / increase brightness
+  - Hand far + hold = sleep / decrease brightness
+- [ ] Test: trigger gesture on STM32, confirm Pi executes correct action
+- [ ] Add gesture enable/disable flag controlled by toggle button (section 1.8)
 
 **Other gesture ideas (software-only, no motors — easy additions once core gestures work):**
-- [ ] Gesture-controlled volume/brightness: swipe up/down to adjust system volume or screen brightness
-- [ ] Gesture-triggered status display: wave to cycle a small status readout (battery %, current/next satellite pass time) — can be shown on the main screen or a small secondary OLED if you add one later
-- [ ] Gesture-controlled antenna manual nudge (Phase 4): once the rotator exists, use a gesture as a manual override to nudge az/el a few degrees without waiting for auto-tracking
+- [ ] Swipe up/down → system volume or screen brightness
+- [ ] Wave → cycle status readout on screen (battery %, next satellite pass time)
+- [ ] Manual antenna nudge (Phase 4): once rotator exists, gesture sends nudge command to STM32 motor control task
 
-**Stretch: MCU-based wake controller (power management)**
-- [ ] Move ToF sensor to a small always-on MCU (e.g. low-power STM32 or similar)
-- [ ] MCU continuously polls ToF sensor in low-power mode (µA-level draw)
-- [ ] On gesture detection, MCU triggers Pi wake (e.g. via GPIO pulling Pi's run pin, or signalling power bank to enable output)
-- [ ] Pi normally sits in suspend/low-power state when not in use, only fully powers on when woken
-- [ ] Document power draw comparison: Pi always-on vs MCU-watching + Pi suspended
-- [ ] Note in build-log: this is a real spacecraft power-budget pattern — low-power "housekeeping" controller manages when higher-power systems wake up
+**Power management (STM32 always-on wake controller):**
+- [ ] Pi auto-suspend timer daemon: Pi suspends after X minutes of inactivity (configure in Phase 1 software setup)
+- [ ] STM32 wake sequence: gesture detected → STM32 pulls Pi RUN pin low → Pi wakes fully
+- [ ] Document power draw in build-log: Pi always-on vs STM32-watching + Pi suspended — this is a real spacecraft housekeeping pattern
 
 ### 1.8 Button & LED Software (Bench Testing)
 Test all button and LED logic on the bench with jumper wires — using your storage container/bench box setup, not the final case. Debugging a loose GPIO connection inside a sealed enclosure is miserable, so all of this stays bench-only until Phase 5.
@@ -263,7 +478,7 @@ Test all button and LED logic on the bench with jumper wires — using your stor
 *Still bench-based — camera is handheld/tripod-mounted for testing, not mounted in the case yet.*
 
 ### 3.1 Order Parts
-- [ ] Raspberry Pi Camera Module (wide FOV preferred) (~$25-35 AUD)
+- [ ] Raspberry Pi Camera Module 3 Wide Angle x2 (~$35-45 AUD each) — one for star tracker (CSI port 1, sky-facing), one for webcam (CSI port 2, forward-facing at top of screen bezel); both connect via CSI ribbon cable, no USB ports used
 - [ ] Camera ribbon cable (usually included)
 - [ ] Small tripod or mount for camera (improvised is fine)
 
@@ -450,7 +665,7 @@ Test all button and LED logic on the bench with jumper wires — using your stor
 - [ ] Mount the USB hub:
   - [ ] Position somewhere accessible internally (not necessarily exterior-facing)
   - [ ] Connect hub's upstream cable to one of Pi 5's USB ports
-  - [ ] Connect keyboard, trackpad, and leave remaining hub ports free for SDR/card reader/future peripherals
+  - [ ] Connect keyboard, trackpad, RTL-SDR dongle, and panel-mount USB-A to the 4 hub ports — all 4 ports now permanently allocated
 - [ ] Bluetooth mouse needs no mounting — just keep it nearby/clipped to the case exterior if you want it always at hand (e.g. small velcro strap)
 - [ ] Mount the battery/power bank:
   - [ ] Place in a location with weight balance in mind (avoid top-heavy/unstable result)
@@ -460,7 +675,14 @@ Test all button and LED logic on the bench with jumper wires — using your stor
 ### 5.4 Mount Phase 2-4 Components
 - [ ] Mount RTL-SDR dongle internally, route antenna cable to an exterior feed-through or SMA panel connector
 - [ ] If built, mount the 137MHz preamp board (2.9) internally near the antenna feed-through, in a way that keeps RF cable runs short
-- [ ] Mount the camera module at an exterior-facing point with a clear view of the sky (e.g. on a lid edge or hinged flap) — confirm it isn't obstructed when the case is closed
+- [ ] Mount Camera 1 (star tracker — Pi Camera Module 3 Wide Angle, CSI port 1):
+  - [ ] Position at an exterior-facing point with a clear unobstructed sky view (e.g. lid edge, hinged flap, or top panel cutout)
+  - [ ] Confirm it is not obstructed when case is closed
+  - [ ] Route CSI ribbon cable internally to Pi CSI port 1
+- [ ] Mount Camera 2 (webcam — Pi Camera Module 3 Wide Angle, CSI port 2):
+  - [ ] Position at top centre of screen bezel, facing forward — same position as a laptop webcam
+  - [ ] Cut a small rectangular slot in the bezel for the lens
+  - [ ] Route CSI ribbon cable internally to Pi CSI port 2
 - [ ] If integrating the antenna rotator (Phase 4) into the case rather than running it standalone: mount the STM32 internally, route UART to Pi, and either cut a mounting point for the az/el assembly or plan its external cable feed-through
 - [ ] If building the gesture-triggered pop-up antenna (4.7): cut the hinge opening for the deploy mechanism into the case wall during this design pass, not afterward
 

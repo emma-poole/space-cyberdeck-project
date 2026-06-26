@@ -15,3 +15,9 @@
 - Complete the initial software setup (1.4 from project guide)
 - Complete installing the core software (1.5 from project guide)
 - Test the software parts of the build & the Bluetooth module (a bit of 1.6 from project guide)
+
+## 25/06/2026
+- Flesh out ideas for the system design (e.g. protection circuits, charging circuits, low-power, RTC, LED strips, specific LED statuses, sound, etc.)
+
+## 26/06/2026
+- Flesh out ideas for the system design (e.g. sound, USB hub ports, etc.)
