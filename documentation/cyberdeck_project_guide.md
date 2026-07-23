@@ -207,6 +207,7 @@ Primary power: **5V/5A USB-C PD power bank, multiple output ports.** Since the b
 - ~~USB-A to microSD card reader~~ — **removed**: redundant, Pi boots directly from its own microSD slot; occasional external storage handled via panel-mount USB-A port instead
 - [ ] (Optional) RJ45 panel-mount extension cable (~$5-10 AUD) — Pi 5 has onboard Gigabit Ethernet; this routes it to case exterior
 - [x] ToF sensor (VL53L4CX) — **owned**
+- [x] STM32 Nucleo board (NUCLEO-L476RG) — **owned**
 
 **Smaller Parts (order from AliExpress unless noted):**
 - [ ] INMP441 I2S MEMS microphone module (~$3-5 AUD) — connects directly to Pi GPIO via I2S (not USB); built-in mic, no USB port used; search "INMP441 I2S microphone module"
@@ -313,9 +314,13 @@ Primary power: **5V/5A USB-C PD power bank, multiple output ports.** Since the b
 *The VL53L4CX connects to the STM32 via I2C — not the Pi. The STM32 handles all gesture detection logic and sends gesture events to the Pi over UART. This is the correct final architecture (not a stretch goal anymore) — it means the STM32 can detect gestures and wake the Pi even when the Pi is fully suspended, which a Pi-connected sensor could never do.*
 
 **STM32 firmware (C + FreeRTOS — done as part of Phase 4 STM32 work):**
-- [ ] Wire VL53L4CX to STM32 I2C pins (SDA, SCL, XSHUT, GPIO1, VDD, GND) — refer to System Design Reference for pull-up/protection values
-- [ ] Write STM32 I2C driver for VL53L4CX at address 0x52
-- [ ] Set up interrupt on GPIO1 pin — sensor signals data-ready instead of polling
+- [x] Wire VL53L4CX to STM32 I2C pins (SDA, SCL, XSHUT, GPIO1, VDD, GND) — refer to System Design Reference for pull-up/protection values
+- [x] Set up STM32CubeMX project for the ToF sensor, including setting up interrupt on GPIO1 pin — sensor signals data-ready instead of polling
+- [x] Get a blinking LED test working on the STM32 to confirm it has been set up correctly
+- [x] Set up JLink RTT Viewer for debugging JLink printf output via WSL
+- [x] Ensure RTT works by printing a test statement
+- [x] Write ToF initialisation and ranging code using the VL53L4CX driver API
+- [ ] Optimise the ToF ranging code to ensure it only triggers when there's an object in front of the sensor e.g. software filter
 - [ ] Write gesture detection logic: interpret distance changes across zones/over time as swipe left/right, hand near/far
 - [ ] Send gesture event codes to Pi over UART (e.g. `GESTURE:SWIPE_LEFT\n`)
 - [ ] Implement wake controller: on wake gesture → pull Pi RUN pin low → Pi wakes from suspend
@@ -562,7 +567,6 @@ Test all button and LED logic on the bench with jumper wires — using your stor
 *Still bench-based — mount, motors, and firmware are all built and tested loose/on a temporary stand, not inside the case.*
 
 ### 4.1 Order Parts
-- [ ] STM32 Nucleo board (reuse from ENGG3800 if available)
 - [ ] 2x servo motors or stepper motors (az/el control) (~$20-40 AUD)
 - [ ] Motor driver board (if using steppers)
 - [ ] Az/el mount hardware (3D printed or basic bracket build)

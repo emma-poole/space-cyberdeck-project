@@ -1,0 +1,34 @@
+# IDEs & Editor Configuration
+**/.vscode/
+**/.clangd
+**/.settings/
+**/.mxproject
+**/.gdbinit
+**/.project
+**/.cproject
+**/cmake/stm32cubemx/
+
+# Vendor Libraries & Bloat (CMSIS, DSP, NN, FreeRTOS, HAL)
+**/Drivers/CMSIS/
+**/Drivers/STM32L4xx_HAL_Driver/
+
+# Vendor Documentation, Examples & Test Suites
+**/DSP_Lib_TestSuite/
+**/NN_Lib_Tests/
+**/Ref_Implementations/
+*.chm
+*.html
+*.txt
+**/_htmresc/
+
+# Build Outputs
+**/build/
+**/Debug/
+**/Release/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.a
+*.lib

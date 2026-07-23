@@ -21,3 +21,13 @@
 
 ## 26/06/2026
 - Flesh out ideas for the system design (e.g. sound, USB hub ports, etc.)
+
+## 23/07/2026
+- Wire VL53L4CX to STM32 I2C pins (SDA, SCL, XSHUT, GPIO1, VDD, GND) — refer to System Design Reference for pull-up/protection values
+- Set up STM32CubeMX project for the ToF sensor, including setting up interrupt on GPIO1 pin — sensor signals data-ready instead of polling
+- Get a blinking LED test working on the STM32 to confirm it has been set up correctly
+- Set up JLink RTT Viewer for debugging JLink printf output via WSL
+
+## 24/07/2026
+- Ensure RTT works by printing a test statement
+- Write ToF initialisation and ranging code using the VL53L4CX driver API
